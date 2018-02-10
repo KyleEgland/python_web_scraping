@@ -1,6 +1,7 @@
 #! python3
 # This code is based off a tutorial found at:
 # https://www.dataquest.io/blog/web-scraping-tutorial-python/
+# This bit of code simply does webpage requests.
 import requests
 
 # Designating a 'target', not neccessary to do as variable

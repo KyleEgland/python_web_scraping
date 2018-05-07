@@ -50,3 +50,68 @@ def get_names():
 
     # Raise an exception if we failed to get any data from the url
     raise Exception('Error retrieving contents at {}'.format(url))
+
+
+def get_hits_on_name(name):
+    # Accepts a 'name' of a mathematician and returns the number of hits that
+    # mathematician's wikipedia page received in the last 60 days, as an 'int'
+    # url_root is a template string that is used to build a URL.
+    url_root = 'https://xtools.wmflabs.org/articleinfo/en.wikipedia.org/{}'
+    response = simple_get(url_root.format(name))
+
+    if response is not None:
+        html = BeautifulSoup(response, 'html.parser')
+
+        hit_link = [a for a in html.select('a')
+                    if a['href'].find('latest-60') > -1]
+
+        if len(hit_link) > 0:
+            # Strip commas
+            link_text = hit_link[0].text.replace(',', '')
+            try:
+                # Convert to integer
+                return int(link_text)
+            except Exception as e:
+                log_error("Couldn't parse {} as an 'int'".format(link_text))
+                log_error("Error:  {}".format(e))
+
+    log_error('No pageviews found for {}'.format(name))
+    return None
+
+
+if __name__ == '__main__':
+    print('Getting the list of names....')
+    names = get_names()
+
+    results = []
+
+    print('Getting stats for each name....')
+
+    for name in names:
+        try:
+            hits = get_hits_on_name(name)
+            if hits is None:
+                hits = -1
+            results.append((hits, name))
+        except Exception as e:
+            results.append((-1, name))
+            log_error('error encountered while processing {}, skipping\
+'.format(name))
+
+    print('...done.\n')
+
+    results.sort()
+    results.reverse()
+
+    if len(results) > 5:
+        top_marks = results[:5]
+    else:
+        top_marks = results
+
+    print('\nThe most popular mathematicians are:\n')
+    for (mark, mathematician) in top_marks:
+        print('{} with {} page views'.format(mathematician, mark))
+
+    no_results = len([res for res in results if res[0] == -1])
+    print('\nBut we did not find results for {} mathemtaticians on the list\
+'.format(no_results))
